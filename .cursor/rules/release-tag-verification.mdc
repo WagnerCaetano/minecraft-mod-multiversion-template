@@ -1,0 +1,17 @@
+---
+description: Verify tag-based CurseForge release before creating or pushing version tags
+globs: gradle.properties,CHANGELOG.md,.github/workflows/curseforge-release.yml,scripts/release-tag.sh,scripts/verify-release-ready.sh
+alwaysApply: false
+---
+
+# Tag-based release verification
+
+Releases activate only by pushing tag `v<mod_version>` (see `.github/workflows/curseforge-release.yml`).
+
+Before recommending a release tag, run `bash scripts/verify-release-ready.sh` and ensure:
+
+- `CHANGELOG.md` has `## <mod_version>`
+- Working tree clean; tag `v<mod_version>` does not exist yet
+- `curseforge_project_id` set; remind about `CURSEFORGE_API_TOKEN` secret
+
+Use `bash scripts/release-tag.sh` then `git push origin v<mod_version>`.

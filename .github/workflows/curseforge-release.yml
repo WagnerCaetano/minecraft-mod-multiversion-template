@@ -1,0 +1,61 @@
+# Publish when you push an annotated version tag, e.g. v1.2.3
+# Tag must match mod_version in gradle.properties (without the "v" prefix).
+#
+# Setup: GitHub secret CURSEFORGE_API_TOKEN
+#        gradle.properties → curseforge_project_id
+
+name: CurseForge release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.*'
+
+concurrency:
+  group: curseforge-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Validate tag matches mod_version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d '\r')"
+          EXPECTED="v${VERSION}"
+          if [ "$TAG" != "$EXPECTED" ]; then
+            echo "::error::Git tag is $TAG but gradle.properties has mod_version=$VERSION (expected tag $EXPECTED)."
+            exit 1
+          fi
+          echo "Releasing mod version $VERSION (tag $TAG)"
+
+      - name: Build release jars
+        run: ./gradlew buildAll --no-daemon
+
+      - name: Publish to CurseForge
+        env:
+          CURSEFORGE_API_TOKEN: ${{ secrets.CURSEFORGE_API_TOKEN }}
+        run: ./gradlew publishAllCurseForge --no-daemon
+
+      - name: Attach jars to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            forge/build/libs/*.jar
+            neoforge/build/libs/*.jar
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,19 @@
+tasks.register('buildAll') {
+    group = 'build'
+    description = 'Build Forge 1.20.1 and NeoForge 1.21.1 jars'
+    dependsOn ':forge:build', ':neoforge:build'
+}
+
+tasks.register('publishAllCurseForge') {
+    group = 'publishing'
+    description = 'Upload Forge and NeoForge jars to CurseForge (requires CURSEFORGE_API_TOKEN)'
+    dependsOn {
+        ['forge', 'neoforge'].collect { loader ->
+            def publish = project(":$loader").tasks.findByName('publishCurseForge')
+            if (publish == null) {
+                throw new GradleException("Set curseforge_project_id in gradle.properties before publishing.")
+            }
+            publish
+        }
+    }
+}

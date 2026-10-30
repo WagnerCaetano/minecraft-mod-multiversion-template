@@ -1,0 +1,58 @@
+/**
+ * Shared CurseForge upload task. Applied from forge/ and neoforge/ after the release jar task exists.
+ *
+ * Required:
+ *   - gradle.properties: curseforge_project_id
+ *   - env CURSEFORGE_API_TOKEN or gradle property curseforge_api_token
+ */
+ext.configureCurseForgePublish = { Map cfg ->
+    def publishTaskType = cfg.publishTaskType
+    def archiveTask = cfg.archiveTask
+    def loaderName = cfg.loaderName
+    def gameVersion = cfg.gameVersion
+    def javaVersion = cfg.javaVersion
+    def displaySuffix = cfg.displaySuffix
+
+    def projectId = findProperty('curseforge_project_id')?.toString()?.trim()
+    def releaseType = findProperty('curseforge_release_type')?.toString()?.trim() ?: 'release'
+    def changelogFile = rootProject.file('CHANGELOG.md')
+    def changelogText = changelogFile.exists()
+            ? changelogFile.getText('UTF-8')
+            : "Release ${project.version}"
+
+    if (!projectId || projectId == '0') {
+        return
+    }
+
+    tasks.register('publishCurseForge', publishTaskType) {
+        group = 'publishing'
+        description = "Upload ${displaySuffix} jar to CurseForge project ${projectId}"
+        dependsOn archiveTask
+
+        onlyIf {
+            System.getenv('CURSEFORGE_API_TOKEN')?.trim() ||
+                    findProperty('curseforge_api_token')?.toString()?.trim()
+        }
+
+        doFirst {
+            def token = System.getenv('CURSEFORGE_API_TOKEN') ?: findProperty('curseforge_api_token')?.toString()
+            if (!token?.trim()) {
+                throw new GradleException('Set CURSEFORGE_API_TOKEN environment variable or curseforge_api_token in gradle.properties.')
+            }
+        }
+
+        apiToken = System.getenv('CURSEFORGE_API_TOKEN') ?: findProperty('curseforge_api_token')?.toString()
+
+        def mainFile = upload(projectId, archiveTask)
+        mainFile.displayName = "${mod_name} ${project.version} (${displaySuffix})"
+        mainFile.releaseType = releaseType
+        mainFile.changelog = changelogText
+        mainFile.changelogType = 'markdown'
+        mainFile.addModLoader(loaderName)
+        mainFile.addGameVersion(gameVersion)
+        mainFile.addJavaVersion(javaVersion)
+        if (mainFile.metaClass.respondsTo(mainFile, 'addEnvironment', String.class, String.class)) {
+            mainFile.addEnvironment('Client', 'Server')
+        }
+    }
+}

@@ -1,0 +1,9 @@
+plugins {
+    id 'java-library'
+}
+
+group = mod_group_id
+version = mod_version
+
+// Java 17 bytecode runs on both 1.20.1 (J17) and 1.21.1 (J21) runtimes.
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
