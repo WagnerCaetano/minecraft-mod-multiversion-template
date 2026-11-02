@@ -2,6 +2,29 @@
 
 Single repository with shared code, per-loader entry points, and a shared `libs/` folder for optional local JARs.
 
+## Use this template
+
+On GitHub: **Use this template** → create a new repository → clone it, then:
+
+1. Replace `mod_id`, `mod_name`, `mod_group_id`, and packages under `com.example.examplemod`.
+2. Set `curseforge_project_id` when you are ready to publish (optional until first release).
+3. Run `./gradlew buildAll` to verify both loaders.
+
+## Patch an existing mod repo
+
+Copy in (merge carefully):
+
+| From template | Into your repo |
+|---------------|----------------|
+| `common/`, `forge/`, `neoforge/` layout | Same paths, or align your sources into this structure |
+| `settings.gradle`, root `build.gradle`, `gradle.properties` | Root Gradle multi-project setup |
+| `gradle/curseforge-publish.gradle`, `gradle/wrapper/` | Shared publish + wrapper |
+| `.github/workflows/curseforge-release.yml` | Tag-based CurseForge CI |
+| `.github/copilot-instructions.md`, `.github/instructions/` | Release checks for Copilot |
+| `scripts/verify-release-ready.sh`, `scripts/release-tag.sh` | Local release pre-flight |
+
+Keep your existing `src` by moving loader code into `forge/` and `neoforge/` and shared logic into `common/`.
+
 ## Layout
 
 | Path | Role |
